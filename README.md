@@ -1,8 +1,10 @@
 # Billbee Custom Shop SDK
 
 A .NET SDK for easy integration with the [Billbee Custom Shop API](https://billbee.io) into custom webshops and e-commerce platforms.
-> **Disclaimer:** This repository is **not officially maintained by Billbee GmbH**. It is an independent implementation created and maintained by Mr. & Mrs. Panda, who use and test this SDK in production environments.
 
+> **Important:** The use of the Billbee Custom Shop API requires explicit permission from Billbee GmbH. This interface enables direct integration between your webshop and Billbee's multichannel e-commerce management platform.
+
+> **Disclaimer:** This repository is **not officially maintained by Billbee GmbH**. It is an independent implementation created and maintained by Mr. & Mrs. Panda, who use and test this SDK in production environments.
 
 ## Overview
 
@@ -16,6 +18,58 @@ The Billbee Custom Shop SDK enables seamless connection of custom webshops with 
 - ✅ **Flexible Service Integration**: Abstract services for different platforms
 - ✅ **Correct HTTP Status Codes**: According to Billbee specification
 - ✅ **Minimal Controller Code**: Only a few lines of code required
+
+## What is the Billbee Custom Shop API?
+
+The **Billbee Custom Shop API** is a programming interface that enables seamless data exchange between custom webshops/marketplaces and [Billbee](https://www.billbee.io), a powerful multichannel e-commerce management software. 
+
+### Why Use This API?
+
+**Billbee** is a comprehensive solution that helps online merchants manage their business across multiple sales channels. It provides:
+- **Multichannel Order Management**: Centralize orders from multiple platforms
+- **Inventory Synchronization**: Keep stock levels synchronized across all channels
+- **Automated Fulfillment**: Streamline shipping and order processing
+- **Financial Management**: Handle invoicing, taxes, and accounting
+- **Analytics & Reporting**: Gain insights into your business performance
+
+### The Integration Challenge
+
+While Billbee supports many popular e-commerce platforms out-of-the-box (Shopify, WooCommerce, Amazon, eBay, etc.), **custom webshops** and **proprietary e-commerce solutions** need a direct integration pathway. This is where the Custom Shop API comes in.
+
+### How This SDK Helps
+
+**Without this SDK**, implementing the Billbee Custom Shop API requires:
+- Deep understanding of the API specification
+- Manual HTTP request/response handling
+- Complex HMAC-SHA256 authentication implementation
+- Proper error handling and status code management
+- Request routing and parameter parsing
+- JSON serialization/deserialization
+
+**With this SDK**, you get:
+- ✅ **One-line integration**: Just implement your business logic
+- ✅ **Automatic request handling**: All HTTP complexity abstracted away
+- ✅ **Secure authentication**: HMAC-SHA256 validation built-in
+- ✅ **Type-safe models**: Strongly typed C# classes for all data structures
+- ✅ **Standard ASP.NET Core**: Fits naturally into existing applications
+- ✅ **Production-ready**: Used and tested in real e-commerce environments
+
+### Data Flow Overview
+
+```
+Your Webshop  ←→  This SDK  ←→  Billbee Platform
+     ↓               ↓              ↓
+- Orders         - HTTP API     - Order Management
+- Products       - Security     - Inventory Sync  
+- Inventory      - Routing      - Fulfillment
+- Customers      - Models       - Reporting
+```
+
+**Billbee acts as the client**, making HTTPS requests to your webshop to:
+- **Fetch new orders** and customer data for processing
+- **Retrieve product information** for catalog management  
+- **Update inventory levels** when stock changes on other channels
+- **Synchronize order status** when orders are shipped or fulfilled
 
 ## Installation
 
