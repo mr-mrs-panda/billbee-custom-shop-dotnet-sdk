@@ -1,6 +1,8 @@
 # Billbee Custom Shop SDK
 
 A .NET SDK for easy integration with the [Billbee Custom Shop API](https://billbee.io) into custom webshops and e-commerce platforms.
+> **Disclaimer:** This repository is **not officially maintained by Billbee GmbH**. It is an independent implementation created and maintained by Mr. & Mrs. Panda, who use and test this SDK in production environments.
+
 
 ## Overview
 
@@ -364,6 +366,7 @@ builder.Services.AddScoped<IMyShopService, MyShopService>();
 
 ## Support
 
+- **GitHub Repository**: [billbee-custom-shop-dotnet-sdk](https://github.com/mr-mrs-panda/billbee-custom-shop-dotnet-sdk)
+- **Issues**: [GitHub Issues](https://github.com/mr-mrs-panda/billbee-custom-shop-dotnet-sdk/issues)
 - **Billbee API Documentation**: [Custom Shop API](https://billbee.io)
-- **Issues**: GitHub Issues for the SDK
 - **Billbee Support**: Contact Billbee directly for API questions

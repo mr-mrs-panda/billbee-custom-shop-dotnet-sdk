@@ -16,14 +16,11 @@
       specification. Zero dependencies!</Description>
     <PackageTags>billbee;e-commerce;shop;api;sdk;integration;multichannel</PackageTags>
     <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/mr-mrs-panda/billbee-custom-shop-dotnet-sdk</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/mr-mrs-panda/billbee-custom-shop-dotnet-sdk</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="" />
-    <None Include="LICENSE" Pack="true" PackagePath="" />
-  </ItemGroup>
 
 </Project>
