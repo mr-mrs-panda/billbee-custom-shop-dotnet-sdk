@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <PackageId>Panda.Billbee.CustomShopSdk</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Mr. &amp; Mrs. Panda</Authors>
+    <Company>Mr. &amp; Mrs. Panda</Company>
+    <Product>Billbee Custom Shop SDK</Product>
+    <Description>A .NET SDK for easy integration with the Billbee Custom Shop API. Provides complete
+      HTTP request handling, parameter parsing, and routing according to the Billbee API
+      specification. Zero dependencies!</Description>
+    <PackageTags>billbee;e-commerce;shop;api;sdk;integration;multichannel</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="LICENSE" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+</Project>
