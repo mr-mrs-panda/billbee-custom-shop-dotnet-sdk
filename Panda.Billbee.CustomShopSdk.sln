@@ -13,6 +13,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panda.Billbee.CustomShopSdk.Tests", "Panda.Billbee.CustomShopSdk.Tests\Panda.Billbee.CustomShopSdk.Tests.csproj", "{215F0F57-6271-4E7D-800D-A11AA579B0A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panda.Billbee.CustomShopSdk.AspNetCore", "Panda.Billbee.CustomShopSdk.AspNetCore\Panda.Billbee.CustomShopSdk.AspNetCore.csproj", "{858152CE-98CA-4E74-AE85-C52764FEC383}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Panda.Billbee.CustomShopSdk.AspNetCore.Tests", "Panda.Billbee.CustomShopSdk.AspNetCore.Tests\Panda.Billbee.CustomShopSdk.AspNetCore.Tests.csproj", "{8C62DA44-7A25-4E38-A490-45A06DC0307E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,13 @@ Global
 		{215F0F57-6271-4E7D-800D-A11AA579B0A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{215F0F57-6271-4E7D-800D-A11AA579B0A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{215F0F57-6271-4E7D-800D-A11AA579B0A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{858152CE-98CA-4E74-AE85-C52764FEC383}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{858152CE-98CA-4E74-AE85-C52764FEC383}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{858152CE-98CA-4E74-AE85-C52764FEC383}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{858152CE-98CA-4E74-AE85-C52764FEC383}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C62DA44-7A25-4E38-A490-45A06DC0307E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C62DA44-7A25-4E38-A490-45A06DC0307E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C62DA44-7A25-4E38-A490-45A06DC0307E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C62DA44-7A25-4E38-A490-45A06DC0307E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
