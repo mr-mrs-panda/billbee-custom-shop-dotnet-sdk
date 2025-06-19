@@ -75,6 +75,9 @@ public class MyShopService : BillbeeCustomShopService, IMyShopService
 
     protected override string? GetApiKey()
         => _configuration["Billbee:ApiKey"];
+    
+    protected override (string? Username, string? Password) GetBasicAuthCredentials()
+        => (_configuration["Billbee:BasicAuth:Username"], _configuration["Billbee:BasicAuth:Password"]);
 }
 ```
 
