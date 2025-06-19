@@ -170,8 +170,10 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
         var setOrderStateRequest = new SetOrderStateRequest
         {
             OrderId = request.GetFormParameter(BillbeeQueryParameters.OrderId),
-            NewStateId =
-                Enum.TryParse<OrderStatus>(request.GetFormParameter(BillbeeQueryParameters.NewStateId), out var status)
+            NewStateId = request.GetFormParameter(BillbeeQueryParameters.NewStateId),
+            NewStateName = request.GetFormParameter(BillbeeQueryParameters.NewStateName),
+            NewStateTypeId = 
+                Enum.TryParse<OrderStatus>(request.GetFormParameter(BillbeeQueryParameters.NewStateTypeId), out var status)
                     ? status
                     : null,
             Comment = request.GetFormParameter(BillbeeQueryParameters.Comment),

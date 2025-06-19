@@ -8,6 +8,8 @@ public static class BillbeeQueryParameters
     public const string OrderId = "OrderId";
     public const string ProductId = "ProductId";
     public const string NewStateId = "NewStateId";
+    public const string NewStateName = "NewStateName";
+    public const string NewStateTypeId = "NewStateTypeId";
     public const string Comment = "Comment";
     public const string ShippingCarrier = "ShippingCarrier";
     public const string TrackingCode = "TrackingCode";

@@ -12,26 +12,43 @@ public class SetOrderStateRequest
     /// </summary>
     [JsonPropertyName("order_id")]
     public string? OrderId { get; set; }
+
     /// <summary>
-    /// New status code to set for the order.
+    /// New status id to set for the order.
     /// </summary>
     [JsonPropertyName("new_state_id")]
-    public OrderStatus? NewStateId { get; set; }
+    public string? NewStateId { get; set; }
+
+    /// <summary>
+    /// New state name to set for the order.
+    /// </summary>
+    [JsonPropertyName("new_state_id")]
+    public string? NewStateName { get; set; }
+
+    /// <summary>
+    /// New status type id to set for the order.
+    /// </summary>
+    [JsonPropertyName("new_state_id")]
+    public OrderStatus? NewStateTypeId { get; set; }
+
     /// <summary>
     /// Optional comment to add to the order history or send to the customer.
     /// </summary>
     [JsonPropertyName("comment")]
     public string? Comment { get; set; }
+
     /// <summary>
     /// Shipping carrier code or name for the shipment.
     /// </summary>
     [JsonPropertyName("shipping_carrier")]
     public string? ShippingCarrier { get; set; }
+
     /// <summary>
     /// Tracking number or code for the shipment.
     /// </summary>
     [JsonPropertyName("tracking_code")]
     public string? TrackingCode { get; set; }
+
     /// <summary>
     /// URL for tracking the shipment status.
     /// </summary>
