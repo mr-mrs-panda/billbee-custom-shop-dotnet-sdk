@@ -25,13 +25,7 @@ public abstract class BillbeeControllerBase : ControllerBase
     public virtual async Task<IActionResult> HandleGetRequest([FromQuery] string action, [FromQuery] string? key = null)
     {
         var result = await BillbeeControllerHelper.HandleGetRequestAsync(BillbeeService, Request, action, key);
-        
-        // Add WWW-Authenticate header for 401 responses
-        if (result is UnauthorizedObjectResult)
-        {
-            Response.Headers.WWWAuthenticate = "Basic realm=\"Billbee API\"";
-        }
-        
+        SetWwwAuthenticateHeaderIfUnauthorized(result);
         return result;
     }
 
@@ -45,13 +39,19 @@ public abstract class BillbeeControllerBase : ControllerBase
     public virtual async Task<IActionResult> HandlePostRequest([FromQuery] string action, [FromQuery] string? key = null)
     {
         var result = await BillbeeControllerHelper.HandlePostRequestAsync(BillbeeService, Request, action, key);
-        
-        // Add WWW-Authenticate header for 401 responses
+        SetWwwAuthenticateHeaderIfUnauthorized(result);
+        return result;
+    }
+
+    /// <summary>
+    /// Sets the WWW-Authenticate header for 401 Unauthorized responses.
+    /// </summary>
+    /// <param name="result">The action result to check</param>
+    private void SetWwwAuthenticateHeaderIfUnauthorized(IActionResult result)
+    {
         if (result is UnauthorizedObjectResult)
         {
             Response.Headers.WWWAuthenticate = "Basic realm=\"Billbee API\"";
         }
-        
-        return result;
     }
 }
