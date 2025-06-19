@@ -80,6 +80,7 @@ public class MyShopService : BillbeeCustomShopService, IMyShopService
 
 ```csharp
 using Panda.Billbee.CustomShopSdk.Models;
+using Panda.Billbee.CustomShopSdk.Constants;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -96,7 +97,7 @@ public class BillbeeApiController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> HandleGetRequest([FromQuery] string action, [FromQuery] string? key)
     {
-        var request = CreateBillbeeRequest("GET", action, key);
+        var request = CreateBillbeeRequest(BillbeeMethods.Get, action, key);
         var result = await _service.HandleRequestAsync(request);
         return ConvertResult(result);
     }
@@ -104,7 +105,7 @@ public class BillbeeApiController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> HandlePostRequest([FromQuery] string action, [FromQuery] string? key)
     {
-        var request = CreateBillbeeRequest("POST", action, key);
+        var request = CreateBillbeeRequest(BillbeeMethods.Post, action, key);
         var result = await _service.HandleRequestAsync(request);
         return ConvertResult(result);
     }
@@ -123,7 +124,7 @@ public class BillbeeApiController : ControllerBase
             request.QueryParameters[param.Key] = param.Value.FirstOrDefault() ?? string.Empty;
 
         // Add form parameters (for POST)
-        if (method == "POST" && Request.HasFormContentType)
+        if (method == BillbeeMethods.Post && Request.HasFormContentType)
         {
             foreach (var param in Request.Form)
                 request.FormParameters[param.Key] = param.Value.FirstOrDefault() ?? string.Empty;
