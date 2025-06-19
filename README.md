@@ -93,62 +93,97 @@ dotnet add reference path/to/Billbee.CustomShopSdk.csproj
 
 ## Quick Start
 
-### 1. Implement Service Interface
+### 1. Implement Service Interfaces
 
 ```csharp
 using Panda.Billbee.CustomShopSdk.Interfaces;
 using Panda.Billbee.CustomShopSdk.Services;
 
-public interface IMyShopService : IBillbeeCustomShopService
+// Bookstore Service
+public interface IBookstoreService : IBillbeeCustomShopService
 {
     // Add your custom methods here if needed
 }
 
-public class MyShopService : BillbeeCustomShopService, IMyShopService
+public class BookstoreService : BillbeeCustomShopService, IBookstoreService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
 
-    public MyShopService(IServiceProvider serviceProvider, IConfiguration configuration)
+    public BookstoreService(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
         _configuration = configuration;
     }
 
     protected override IOrderService? GetOrderService()
-        => _serviceProvider.GetService<IOrderService>();
+        => _serviceProvider.GetKeyedService<IOrderService>("Bookstore");
 
     protected override IProductService? GetProductService()
-        => _serviceProvider.GetService<IProductService>();
+        => _serviceProvider.GetKeyedService<IProductService>("Bookstore");
 
     protected override IStockService? GetStockService()
-        => _serviceProvider.GetService<IStockService>();
+        => _serviceProvider.GetKeyedService<IStockService>("Bookstore");
 
     protected override IShippingService? GetShippingService()
-        => _serviceProvider.GetService<IShippingService>();
+        => _serviceProvider.GetKeyedService<IShippingService>("Bookstore");
 
     protected override string? GetApiKey()
-        => _configuration["Billbee:ApiKey"];
+        => _configuration["Billbee:Bookstore:ApiKey"];
     
     protected override (string? Username, string? Password) GetBasicAuthCredentials()
-        => (_configuration["Billbee:BasicAuth:Username"], _configuration["Billbee:BasicAuth:Password"]);
+        => (_configuration["Billbee:Bookstore:Username"], _configuration["Billbee:Bookstore:Password"]);
+}
+
+// Electronics Store Service
+public interface IElectronicsStoreService : IBillbeeCustomShopService { }
+
+public class ElectronicsStoreService : BillbeeCustomShopService, IElectronicsStoreService
+{
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IConfiguration _configuration;
+
+    public ElectronicsStoreService(IServiceProvider serviceProvider, IConfiguration configuration)
+    {
+        _serviceProvider = serviceProvider;
+        _configuration = configuration;
+    }
+
+    protected override IOrderService? GetOrderService()
+        => _serviceProvider.GetKeyedService<IOrderService>("Electronics");
+
+    protected override IProductService? GetProductService()
+        => _serviceProvider.GetKeyedService<IProductService>("Electronics");
+
+    protected override IStockService? GetStockService()
+        => _serviceProvider.GetKeyedService<IStockService>("Electronics");
+
+    protected override IShippingService? GetShippingService()
+        => _serviceProvider.GetKeyedService<IShippingService>("Electronics");
+
+    protected override string? GetApiKey()
+        => _configuration["Billbee:Electronics:ApiKey"];
+    
+    protected override (string? Username, string? Password) GetBasicAuthCredentials()
+        => (_configuration["Billbee:Electronics:Username"], _configuration["Billbee:Electronics:Password"]);
 }
 ```
 
-### 2. Create Controller
+### 2. Create Controllers
 
 ```csharp
 using Panda.Billbee.CustomShopSdk.Models;
 using Panda.Billbee.CustomShopSdk.Constants;
 using Microsoft.AspNetCore.Mvc;
 
+// Bookstore Controller
 [ApiController]
-[Route("billbee_api")]
-public class BillbeeApiController : ControllerBase
+[Route("bookstore_api")]
+public class BookstoreController : ControllerBase
 {
-    private readonly IMyShopService _service;
+    private readonly IBookstoreService _service;
 
-    public BillbeeApiController(IMyShopService service)
+    public BookstoreController(IBookstoreService service)
     {
         _service = service;
     }
@@ -214,34 +249,111 @@ public class BillbeeApiController : ControllerBase
         return StatusCode(401, message);
     }
 }
+
+// Electronics Store Controller
+[ApiController]
+[Route("electronics_api")]
+public class ElectronicsStoreController : ControllerBase
+{
+    private readonly IElectronicsStoreService _service;
+
+    public ElectronicsStoreController(IElectronicsStoreService service)
+    {
+        _service = service;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> HandleGetRequest([FromQuery] string action, [FromQuery] string? key)
+    {
+        var request = CreateBillbeeRequest(BillbeeMethods.Get, action, key);
+        var result = await _service.HandleRequestAsync(request);
+        return ConvertResult(result);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> HandlePostRequest([FromQuery] string action, [FromQuery] string? key)
+    {
+        var request = CreateBillbeeRequest(BillbeeMethods.Post, action, key);
+        var result = await _service.HandleRequestAsync(request);
+        return ConvertResult(result);
+    }
+
+    // Same helper methods as BookstoreController (CreateBillbeeRequest, ConvertResult, Unauthorized)
+    // Implementation details omitted for brevity
+}
 ```
 
 ### 3. Register Services
 
 ```csharp
 // Program.cs
-builder.Services.AddScoped<IOrderService, MyOrderService>();
-builder.Services.AddScoped<IProductService, MyProductService>();
-builder.Services.AddScoped<IStockService, MyStockService>();
-builder.Services.AddScoped<IShippingService, MyShippingService>();
-builder.Services.AddScoped<IMyShopService, MyShopService>();
+
+// Bookstore services
+builder.Services.AddKeyedScoped<IOrderService, BookstoreOrderService>("Bookstore");
+builder.Services.AddKeyedScoped<IProductService, BookstoreProductService>("Bookstore");
+builder.Services.AddKeyedScoped<IStockService, BookstoreStockService>("Bookstore");
+builder.Services.AddKeyedScoped<IShippingService, BookstoreShippingService>("Bookstore");
+
+// Electronics store services
+builder.Services.AddKeyedScoped<IOrderService, ElectronicsOrderService>("Electronics");
+builder.Services.AddKeyedScoped<IProductService, ElectronicsProductService>("Electronics");
+builder.Services.AddKeyedScoped<IStockService, ElectronicsStockService>("Electronics");
+builder.Services.AddKeyedScoped<IShippingService, ElectronicsShippingService>("Electronics");
+
+// Billbee services
+builder.Services.AddScoped<IBookstoreService, BookstoreService>();
+builder.Services.AddScoped<IElectronicsStoreService, ElectronicsStoreService>();
+```
+
+### 4. Configuration
+
+```json
+{
+  "Billbee": {
+    "Bookstore": {
+      "ApiKey": "your-bookstore-api-key",
+      "Username": "bookstore-user",
+      "Password": "bookstore-password"
+    },
+    "Electronics": {
+      "ApiKey": "your-electronics-api-key",
+      "Username": "electronics-user",
+      "Password": "electronics-password"
+    }
+  }
+}
 ```
 
 ## API Endpoints
 
-The SDK implements all Billbee Custom Shop API endpoints:
+The SDK implements all Billbee Custom Shop API endpoints. Each shop has its own dedicated endpoint:
 
-### GET Requests
-- `?Action=GetOrders` - Retrieve orders
-- `?Action=GetOrder` - Retrieve single order
-- `?Action=GetProduct` - Retrieve single product
-- `?Action=GetProducts` - Retrieve product list
-- `?Action=GetShippingProfiles` - Retrieve shipping profiles
+### Example URLs
 
-### POST Requests
-- `?Action=AckOrder` - Acknowledge order
-- `?Action=SetOrderState` - Change order status
-- `?Action=SetStock` - Update inventory
+**Bookstore API (Route: `/bookstore_api`)**
+- `GET /bookstore_api?Action=GetOrders&StartDate=2024-01-01&Page=1&PageSize=100`
+- `GET /bookstore_api?Action=GetOrder&OrderId=12345`
+- `POST /bookstore_api?Action=AckOrder` (OrderId in form body)
+- `POST /bookstore_api?Action=SetOrderState` (Status data in form body)
+
+**Electronics Store API (Route: `/electronics_api`)**
+- `GET /electronics_api?Action=GetProducts&Page=1&PageSize=50`
+- `GET /electronics_api?Action=GetProduct&ProductId=67890`
+- `POST /electronics_api?Action=SetStock` (Stock data in form body)
+
+### Supported Actions
+
+#### GET Requests
+- `?Action=GetOrders` - Retrieve orders with pagination and date filtering
+- `?Action=GetOrder` - Retrieve single order by ID
+- `?Action=GetProduct` - Retrieve single product by ID
+- `?Action=GetProducts` - Retrieve product list with pagination
+- `?Action=GetShippingProfiles` - Retrieve available shipping profiles
+
+#### POST Requests
+- `?Action=AckOrder` - Acknowledge successful order import
+- `?Action=SetOrderState` - Update order status (shipped, paid, etc.)
+- `?Action=SetStock` - Update product inventory levels
 
 ## Service Interfaces
 
