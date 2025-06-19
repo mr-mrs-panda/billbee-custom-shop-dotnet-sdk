@@ -37,18 +37,23 @@ dotnet add reference path/to/Billbee.CustomShopSdk.csproj
 
 ## Quick Start
 
-### 1. Implement Service
+### 1. Implement Service Interface
 
 ```csharp
 using Panda.Billbee.CustomShopSdk.Interfaces;
 using Panda.Billbee.CustomShopSdk.Services;
 
-public class MyBillbeeService : BillbeeCustomShopService
+public interface IMyShopService : IBillbeeCustomShopService
+{
+    // Add your custom methods here if needed
+}
+
+public class MyShopService : BillbeeCustomShopService, IMyShopService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
 
-    public MyBillbeeService(IServiceProvider serviceProvider, IConfiguration configuration)
+    public MyShopService(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
         _configuration = configuration;
@@ -75,16 +80,15 @@ public class MyBillbeeService : BillbeeCustomShopService
 
 ```csharp
 using Panda.Billbee.CustomShopSdk.Models;
-using Panda.Billbee.CustomShopSdk.Services;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("billbee_api")]
 public class BillbeeApiController : ControllerBase
 {
-    private readonly BillbeeCustomShopService _service;
+    private readonly IMyShopService _service;
 
-    public BillbeeApiController(BillbeeCustomShopService service)
+    public BillbeeApiController(IMyShopService service)
     {
         _service = service;
     }
@@ -160,7 +164,7 @@ builder.Services.AddScoped<IOrderService, MyOrderService>();
 builder.Services.AddScoped<IProductService, MyProductService>();
 builder.Services.AddScoped<IStockService, MyStockService>();
 builder.Services.AddScoped<IShippingService, MyShippingService>();
-builder.Services.AddScoped<BillbeeCustomShopService, MyBillbeeService>();
+builder.Services.AddScoped<IMyShopService, MyShopService>();
 ```
 
 ## API Endpoints
@@ -350,7 +354,7 @@ app.MapControllers();
 **Services not found**
 ```csharp
 // Register all required services in DI
-builder.Services.AddScoped<BillbeeCustomShopService, MyBillbeeService>();
+builder.Services.AddScoped<IMyShopService, MyShopService>();
 ```
 
 ## Legal Notice
