@@ -73,7 +73,7 @@ Your Webshop  ←→  This SDK  ←→  Billbee Platform
 
 ## Installation
 
-### NuGet Package
+### Core SDK
 ```bash
 # Via dotnet CLI
 dotnet add package Panda.Billbee.CustomShopSdk
@@ -85,10 +85,14 @@ Install-Package Panda.Billbee.CustomShopSdk
 <PackageReference Include="Panda.Billbee.CustomShopSdk" Version="1.0.0" />
 ```
 
-### Local Development
+### ASP.NET Core Helpers (Optional)
+For simplified controller integration:
 ```bash
-# For local development
-dotnet add reference path/to/Billbee.CustomShopSdk.csproj
+# Via dotnet CLI
+dotnet add package Panda.Billbee.CustomShopSdk.AspNetCore
+
+# Via Package Manager Console
+Install-Package Panda.Billbee.CustomShopSdk.AspNetCore
 ```
 
 ## Quick Start
@@ -171,22 +175,72 @@ public class ElectronicsStoreService : BillbeeCustomShopService, IElectronicsSto
 
 ### 2. Create Controllers
 
+#### Option A: Using ASP.NET Core Helpers (Recommended)
 ```csharp
-using Panda.Billbee.CustomShopSdk.Models;
-using Panda.Billbee.CustomShopSdk.Constants;
 using Microsoft.AspNetCore.Mvc;
+using Panda.Billbee.CustomShopSdk.AspNetCore.Controllers;
 
 // Bookstore Controller
+[ApiController]
+[Route("bookstore_api")]
+public class BookstoreController : BillbeeControllerBase
+{
+    private readonly IBookstoreService _service;
+    
+    public BookstoreController(IBookstoreService service) => _service = service;
+    
+    protected override IBillbeeCustomShopService BillbeeService => _service;
+}
+
+// Electronics Store Controller  
+[ApiController]
+[Route("electronics_api")]
+public class ElectronicsStoreController : BillbeeControllerBase
+{
+    private readonly IElectronicsStoreService _service;
+    
+    public ElectronicsStoreController(IElectronicsStoreService service) => _service = service;
+    
+    protected override IBillbeeCustomShopService BillbeeService => _service;
+}
+```
+
+#### Option B: Using Helper Methods
+```csharp
+using Panda.Billbee.CustomShopSdk.AspNetCore.Helpers;
+using Microsoft.AspNetCore.Mvc;
+
 [ApiController]
 [Route("bookstore_api")]
 public class BookstoreController : ControllerBase
 {
     private readonly IBookstoreService _service;
 
-    public BookstoreController(IBookstoreService service)
-    {
-        _service = service;
-    }
+    public BookstoreController(IBookstoreService service) => _service = service;
+
+    [HttpGet]
+    public async Task<IActionResult> Get([FromQuery] string action, [FromQuery] string? key)
+        => await BillbeeControllerHelper.HandleGetRequestAsync(_service, Request, action, key);
+
+    [HttpPost]
+    public async Task<IActionResult> Post([FromQuery] string action, [FromQuery] string? key)
+        => await BillbeeControllerHelper.HandlePostRequestAsync(_service, Request, action, key);
+}
+```
+
+#### Option C: Manual Implementation (Core SDK Only)
+```csharp
+using Panda.Billbee.CustomShopSdk.Models;
+using Panda.Billbee.CustomShopSdk.Constants;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("bookstore_api")]
+public class BookstoreController : ControllerBase
+{
+    private readonly IBookstoreService _service;
+
+    public BookstoreController(IBookstoreService service) => _service = service;
 
     [HttpGet]
     public async Task<IActionResult> HandleGetRequest([FromQuery] string action, [FromQuery] string? key)
@@ -210,14 +264,13 @@ public class BookstoreController : ControllerBase
         {
             Method = method,
             Action = action,
-            Key = key
+            Key = key,
+            AuthorizationHeader = Request.Headers.Authorization.FirstOrDefault()
         };
 
-        // Add query parameters
         foreach (var param in Request.Query)
             request.QueryParameters[param.Key] = param.Value.FirstOrDefault() ?? string.Empty;
 
-        // Add form parameters (for POST)
         if (method == BillbeeMethods.Post && Request.HasFormContentType)
         {
             foreach (var param in Request.Form)
@@ -245,41 +298,9 @@ public class BookstoreController : ControllerBase
 
     private new IActionResult Unauthorized(string? message = null)
     {
-        Response.Headers.Add("WWW-Authenticate", "Basic realm=\"Billbee API\"");
+        Response.Headers["WWW-Authenticate"] = "Basic realm=\"Billbee API\"";
         return StatusCode(401, message);
     }
-}
-
-// Electronics Store Controller
-[ApiController]
-[Route("electronics_api")]
-public class ElectronicsStoreController : ControllerBase
-{
-    private readonly IElectronicsStoreService _service;
-
-    public ElectronicsStoreController(IElectronicsStoreService service)
-    {
-        _service = service;
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> HandleGetRequest([FromQuery] string action, [FromQuery] string? key)
-    {
-        var request = CreateBillbeeRequest(BillbeeMethods.Get, action, key);
-        var result = await _service.HandleRequestAsync(request);
-        return ConvertResult(result);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> HandlePostRequest([FromQuery] string action, [FromQuery] string? key)
-    {
-        var request = CreateBillbeeRequest(BillbeeMethods.Post, action, key);
-        var result = await _service.HandleRequestAsync(request);
-        return ConvertResult(result);
-    }
-
-    // Same helper methods as BookstoreController (CreateBillbeeRequest, ConvertResult, Unauthorized)
-    // Implementation details omitted for brevity
 }
 ```
 

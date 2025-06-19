@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <PackageId>Panda.Billbee.CustomShopSdk.AspNetCore</PackageId>
+    <Authors>Mr. &amp; Mrs. Panda</Authors>
+    <Company>Mr. &amp; Mrs. Panda</Company>
+    <Product>Billbee Custom Shop SDK - ASP.NET Core Helpers</Product>
+    <Description>ASP.NET Core helper library for the Billbee Custom Shop SDK. Provides base controller classes and static helper methods to eliminate boilerplate code in controller implementations. Reduces controller code from ~80 lines to ~3 lines!</Description>
+    <PackageTags>billbee;e-commerce;shop;api;sdk;aspnetcore;mvc;controller;helpers</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/mr-mrs-panda/billbee-custom-shop-dotnet-sdk</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/mr-mrs-panda/billbee-custom-shop-dotnet-sdk</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Copyright>Copyright (c) $([System.DateTime]::Now.Year) Mr. &amp; Mrs. Panda</Copyright>
+    
+    <!-- Symbol package settings -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    
+    <!-- Source Link for debugging -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    
+    <!-- Deterministic builds -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Panda.Billbee.CustomShopSdk/Panda.Billbee.CustomShopSdk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="" />
+    <None Include="../LICENSE" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+</Project>
