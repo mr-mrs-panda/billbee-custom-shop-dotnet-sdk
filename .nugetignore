@@ -1,0 +1,36 @@
+# Build outputs
+bin/
+obj/
+*.user
+*.suo
+*.cache
+
+# Test files
+*Tests/
+*.Test.*
+test*/
+
+# Development files
+.vs/
+.vscode/
+.idea/
+*.DotSettings*
+
+# CI/CD files
+.github/
+azure-pipelines.yml
+appveyor.yml
+
+# Documentation (except README which is included)
+docs/
+*.md
+!README.md
+
+# Git files
+.git*
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
