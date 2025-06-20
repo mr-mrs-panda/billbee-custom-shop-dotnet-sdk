@@ -125,7 +125,7 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
                 BillbeeActions.SetStock when request.Method.Equals(BillbeeMethods.Post,
                     StringComparison.CurrentCultureIgnoreCase) => await HandleSetStockAsync(request),
                 _ => ServiceResult.BadRequest(request,
-                    $"Invalid action '{request.Action}' for method '{request.Method}'")
+                    $"Invalid action '{GetSafeActionName(request.Action)}' for method '{request.Method}'")
             };
         }
         catch (Exception ex)
@@ -313,6 +313,32 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
             return true;
 
         return ApiKeyAuthenticator.ValidateBasicAuth(username, password, authHeader);
+    }
+
+    /// <summary>
+    /// Sanitizes the action parameter for safe logging by only allowing known valid actions.
+    /// This prevents log injection attacks from user-controlled input.
+    /// </summary>
+    /// <param name="action">The action parameter from user input</param>
+    /// <returns>A sanitized action name safe for logging</returns>
+    private static string GetSafeActionName(string? action)
+    {
+        if (string.IsNullOrEmpty(action))
+            return "Unknown";
+
+        // Only allow known valid actions to prevent log injection
+        return action.ToLowerInvariant() switch
+        {
+            BillbeeActions.GetOrders => "GetOrders",
+            BillbeeActions.GetOrder => "GetOrder", 
+            BillbeeActions.GetProduct => "GetProduct",
+            BillbeeActions.GetProducts => "GetProducts",
+            BillbeeActions.GetShippingProfiles => "GetShippingProfiles",
+            BillbeeActions.AckOrder => "AckOrder",
+            BillbeeActions.SetOrderState => "SetOrderState",
+            BillbeeActions.SetStock => "SetStock",
+            _ => "InvalidAction"
+        };
     }
 
 }

@@ -517,7 +517,10 @@ public class BillbeeCustomShopServiceTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ServiceErrorType.BadRequest, result.ErrorType);
-        Assert.Contains($"Invalid action '{action}' for method '{method}'", result.ErrorMessage);
+        
+        // Check that error message contains sanitized action name (not the raw user input)
+        var expectedSanitizedAction = GetExpectedSanitizedActionName(action);
+        Assert.Contains($"Invalid action '{expectedSanitizedAction}' for method '{method}'", result.ErrorMessage);
     }
 
     [Fact]
@@ -628,5 +631,25 @@ public class BillbeeCustomShopServiceTests
         // Assert - Should contain proper action name for valid actions
         Assert.Contains("[GET - GetOrders]", errorMessage);
         Assert.Contains("NotFound - Order not found", errorMessage);
+    }
+
+    /// <summary>
+    /// Helper method to get the expected sanitized action name for testing.
+    /// This mirrors the GetSafeActionName logic in the production code.
+    /// </summary>
+    private static string GetExpectedSanitizedActionName(string action)
+    {
+        return action.ToLowerInvariant() switch
+        {
+            BillbeeActions.GetOrders => "GetOrders",
+            BillbeeActions.GetOrder => "GetOrder",
+            BillbeeActions.GetProduct => "GetProduct",
+            BillbeeActions.GetProducts => "GetProducts",
+            BillbeeActions.GetShippingProfiles => "GetShippingProfiles",
+            BillbeeActions.AckOrder => "AckOrder",
+            BillbeeActions.SetOrderState => "SetOrderState",
+            BillbeeActions.SetStock => "SetStock",
+            _ => "InvalidAction"
+        };
     }
 }
