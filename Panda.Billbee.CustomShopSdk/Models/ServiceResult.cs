@@ -1,3 +1,5 @@
+using Panda.Billbee.CustomShopSdk.Constants;
+
 namespace Panda.Billbee.CustomShopSdk.Models;
 
 /// <summary>
@@ -120,10 +122,36 @@ public class ServiceResult
             return null;
         }
 
-        var requestPrefix = Request == null ? string.Empty : $"[{Request.Method} - {Request.Action}] | ";
+        var requestPrefix = Request == null ? string.Empty : $"[{Request.Method} - {GetSafeActionName(Request.Action)}] | ";
         var errorMessage = Exception?.Message ?? ErrorMessage;
         var message = $"{requestPrefix}{ErrorType} - {errorMessage}.";
         return message;
+    }
+
+    /// <summary>
+    /// Sanitizes the action parameter for safe logging by only allowing known valid actions.
+    /// This prevents log injection attacks from user-controlled input.
+    /// </summary>
+    /// <param name="action">The action parameter from user input</param>
+    /// <returns>A sanitized action name safe for logging</returns>
+    private static string GetSafeActionName(string? action)
+    {
+        if (string.IsNullOrEmpty(action))
+            return "Unknown";
+
+        // Only allow known valid actions to prevent log injection
+        return action.ToLowerInvariant() switch
+        {
+            BillbeeActions.GetOrders => "GetOrders",
+            BillbeeActions.GetOrder => "GetOrder", 
+            BillbeeActions.GetProduct => "GetProduct",
+            BillbeeActions.GetProducts => "GetProducts",
+            BillbeeActions.GetShippingProfiles => "GetShippingProfiles",
+            BillbeeActions.AckOrder => "AckOrder",
+            BillbeeActions.SetOrderState => "SetOrderState",
+            BillbeeActions.SetStock => "SetStock",
+            _ => "InvalidAction"
+        };
     }
 }
 

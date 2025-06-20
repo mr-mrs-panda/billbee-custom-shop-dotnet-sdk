@@ -563,4 +563,70 @@ public class BillbeeCustomShopServiceTests
         // Assert
         Assert.True(result.IsSuccess);
     }
+
+    [Fact]
+    public void ServiceResult_GetErrorMessage_SanitizesActionParameter()
+    {
+        // Arrange - Test with potentially malicious action parameter containing injection attempt
+        var maliciousAction = "getorders\r\n[INJECTED LOG ENTRY] FAKE ERROR";
+        var request = new BillbeeRequest
+        {
+            Method = BillbeeMethods.Get,
+            Action = maliciousAction
+        };
+
+        var serviceResult = ServiceResult.BadRequest(request, "Test error");
+
+        // Act
+        var errorMessage = serviceResult.GetErrorMessage();
+
+        // Assert - Should contain "InvalidAction" since malicious input doesn't match exactly, and not contain injection
+        Assert.Contains("[GET - InvalidAction]", errorMessage);
+        Assert.DoesNotContain("INJECTED LOG ENTRY", errorMessage);
+        Assert.DoesNotContain("FAKE ERROR", errorMessage);
+        Assert.DoesNotContain("\r\n", errorMessage);
+    }
+
+    [Fact]
+    public void ServiceResult_GetErrorMessage_HandlesInvalidActionParameter()
+    {
+        // Arrange - Test with completely invalid action
+        var invalidAction = "<script>alert('xss')</script>";
+        var request = new BillbeeRequest
+        {
+            Method = BillbeeMethods.Post,
+            Action = invalidAction
+        };
+
+        var serviceResult = ServiceResult.Forbidden(request, "Access denied");
+
+        // Act
+        var errorMessage = serviceResult.GetErrorMessage();
+
+        // Assert - Should use "InvalidAction" for unknown actions
+        Assert.Contains("[POST - InvalidAction]", errorMessage);
+        Assert.DoesNotContain("<script>", errorMessage);
+        Assert.DoesNotContain("alert", errorMessage);
+    }
+
+    [Fact]
+    public void ServiceResult_GetErrorMessage_HandlesValidActionParameter()
+    {
+        // Arrange - Test with valid action parameter
+        var validAction = BillbeeActions.GetOrders;
+        var request = new BillbeeRequest
+        {
+            Method = BillbeeMethods.Get,
+            Action = validAction
+        };
+
+        var serviceResult = ServiceResult.NotFound(request, "Order not found");
+
+        // Act
+        var errorMessage = serviceResult.GetErrorMessage();
+
+        // Assert - Should contain proper action name for valid actions
+        Assert.Contains("[GET - GetOrders]", errorMessage);
+        Assert.Contains("NotFound - Order not found", errorMessage);
+    }
 }
