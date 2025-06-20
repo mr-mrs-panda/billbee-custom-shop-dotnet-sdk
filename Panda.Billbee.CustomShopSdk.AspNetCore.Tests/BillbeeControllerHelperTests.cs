@@ -29,7 +29,8 @@ public class BillbeeControllerHelperTests
         // Arrange
         const string action = "GetOrders";
         const string key = "test-key";
-        var expectedResult = ServiceResult.Success("test-data");
+        var billbeeRequest = new BillbeeRequest { Method = "GET", Action = action };
+        var expectedResult = ServiceResult.Success(billbeeRequest, "test-data");
         
         _mockService.Setup(s => s.HandleRequestAsync(It.IsAny<BillbeeRequest>()))
                    .ReturnsAsync(expectedResult);
@@ -40,9 +41,7 @@ public class BillbeeControllerHelperTests
         var result = await BillbeeControllerHelper.HandleGetRequestAsync(_mockService.Object, _mockRequest.Object, action, key);
 
         // Assert
-        Assert.IsType<OkObjectResult>(result);
-        var okResult = (OkObjectResult)result;
-        Assert.Equal("test-data", okResult.Value);
+        Assert.Equal(expectedResult, result);
         
         _mockService.Verify(s => s.HandleRequestAsync(It.Is<BillbeeRequest>(r => 
             r.Method == BillbeeMethods.Get && 
@@ -56,7 +55,8 @@ public class BillbeeControllerHelperTests
         // Arrange
         const string action = "AckOrder";
         const string key = "test-key";
-        var expectedResult = ServiceResult.Success("OK");
+        var billbeeRequest = new BillbeeRequest { Method = "POST", Action = action };
+        var expectedResult = ServiceResult.Success(billbeeRequest, "OK");
         
         _mockService.Setup(s => s.HandleRequestAsync(It.IsAny<BillbeeRequest>()))
                    .ReturnsAsync(expectedResult);
@@ -67,9 +67,7 @@ public class BillbeeControllerHelperTests
         var result = await BillbeeControllerHelper.HandlePostRequestAsync(_mockService.Object, _mockRequest.Object, action, key);
 
         // Assert
-        Assert.IsType<OkObjectResult>(result);
-        var okResult = (OkObjectResult)result;
-        Assert.Equal("OK", okResult.Value);
+        Assert.Equal(expectedResult, result);
         
         _mockService.Verify(s => s.HandleRequestAsync(It.Is<BillbeeRequest>(r => 
             r.Method == BillbeeMethods.Post && 
@@ -151,11 +149,11 @@ public class BillbeeControllerHelperTests
         // Arrange
         ServiceResult serviceResult = errorType switch
         {
-            ServiceErrorType.Unauthorized => ServiceResult.Unauthorized("Test error message"),
-            ServiceErrorType.NotFound => ServiceResult.NotFound("Test error message"),
-            ServiceErrorType.BadRequest => ServiceResult.BadRequest("Test error message"),
-            ServiceErrorType.Forbidden => ServiceResult.Forbidden("Test error message"),
-            ServiceErrorType.InternalServerError => ServiceResult.InternalServerError("Test error message"),
+            ServiceErrorType.Unauthorized => ServiceResult.Unauthorized(new BillbeeRequest(), "Test error message"),
+            ServiceErrorType.NotFound => ServiceResult.NotFound(new BillbeeRequest(), "Test error message"),
+            ServiceErrorType.BadRequest => ServiceResult.BadRequest(new BillbeeRequest(), "Test error message"),
+            ServiceErrorType.Forbidden => ServiceResult.Forbidden(new BillbeeRequest(), "Test error message"),
+            ServiceErrorType.InternalServerError => ServiceResult.InternalServerError(new BillbeeRequest(), "Test error message"),
             _ => throw new ArgumentOutOfRangeException(nameof(errorType))
         };
 
@@ -177,7 +175,7 @@ public class BillbeeControllerHelperTests
     {
         // Arrange
         var testData = new { Message = "Success" };
-        var serviceResult = ServiceResult.Success(testData);
+        var serviceResult = ServiceResult.Success(new BillbeeRequest(), testData);
 
         // Act
         var result = BillbeeControllerHelper.ConvertToActionResult(serviceResult);

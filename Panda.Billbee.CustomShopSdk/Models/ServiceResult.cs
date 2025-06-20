@@ -1,3 +1,5 @@
+using Panda.Billbee.CustomShopSdk.Constants;
+
 namespace Panda.Billbee.CustomShopSdk.Models;
 
 /// <summary>
@@ -9,180 +11,146 @@ public class ServiceResult
     /// Indicates whether the operation completed successfully.
     /// </summary>
     public bool IsSuccess { get; set; }
+
     /// <summary>
     /// The data returned on success.
     /// </summary>
     public object? Data { get; set; }
+
     /// <summary>
     /// The error message returned on failure.
     /// </summary>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// The exception that occurred during processing, if any.
+    /// </summary>
+    public Exception? Exception { get; set; }
+
     /// <summary>
     /// The type of error for failure scenarios.
     /// </summary>
     public ServiceErrorType ErrorType { get; set; }
 
-    public static ServiceResult Success(object? data = null)
+    /// <summary>
+    /// The original Billbee request that was processed, if available.
+    /// </summary>
+    public BillbeeRequest? Request { get; set; }
+
+    public static ServiceResult Success(BillbeeRequest request, object? data = null)
     {
         return new ServiceResult
         {
             IsSuccess = true,
             Data = data,
-            ErrorType = ServiceErrorType.None
+            ErrorType = ServiceErrorType.None,
+            Request = request
         };
     }
 
-    public static ServiceResult Unauthorized(string message = "Unauthorized")
+    public static ServiceResult Unauthorized(BillbeeRequest request, string message = "Unauthorized")
     {
         return new ServiceResult
         {
             IsSuccess = false,
             ErrorMessage = message,
-            ErrorType = ServiceErrorType.Unauthorized
+            ErrorType = ServiceErrorType.Unauthorized,
+            Request = request
         };
     }
 
-    public static ServiceResult NotFound(string message = "Not Found")
+    public static ServiceResult NotFound(BillbeeRequest request, string message = "Not Found")
     {
         return new ServiceResult
         {
             IsSuccess = false,
             ErrorMessage = message,
-            ErrorType = ServiceErrorType.NotFound
+            ErrorType = ServiceErrorType.NotFound,
+            Request = request
         };
     }
 
-    public static ServiceResult BadRequest(string message = "Bad Request")
+    public static ServiceResult BadRequest(BillbeeRequest request, string message = "Bad Request")
     {
         return new ServiceResult
         {
             IsSuccess = false,
             ErrorMessage = message,
-            ErrorType = ServiceErrorType.BadRequest
+            ErrorType = ServiceErrorType.BadRequest,
+            Request = request
         };
     }
 
-    public static ServiceResult Forbidden(string message = "Forbidden")
+    public static ServiceResult Forbidden(BillbeeRequest request, string message = "Forbidden")
     {
         return new ServiceResult
         {
             IsSuccess = false,
             ErrorMessage = message,
-            ErrorType = ServiceErrorType.Forbidden
+            ErrorType = ServiceErrorType.Forbidden,
+            Request = request
         };
     }
 
-    public static ServiceResult InternalServerError(string message = "Internal Server Error")
+    public static ServiceResult InternalServerError(BillbeeRequest request, string message = "Internal Server Error")
     {
         return new ServiceResult
         {
             IsSuccess = false,
             ErrorMessage = message,
-            ErrorType = ServiceErrorType.InternalServerError
+            ErrorType = ServiceErrorType.InternalServerError,
+            Request = request
         };
     }
 
-    public static ServiceResult CreateFromResult<T>(ServiceResult<T> other)
+    public static ServiceResult InternalServerError(BillbeeRequest request, Exception exception)
     {
         return new ServiceResult
         {
-            IsSuccess = other.IsSuccess,
-            Data = other.Data,
-            ErrorMessage = other.ErrorMessage,
-            ErrorType = other.ErrorType
+            IsSuccess = false,
+            ErrorMessage = exception.Message,
+            Exception = exception,
+            ErrorType = ServiceErrorType.InternalServerError,
+            Request = request
         };
     }
-}
 
-/// <summary>
-/// Represents the result of handling a Billbee API request with a typed data payload.
-/// </summary>
-public class ServiceResult<T>
-{
+    public string? GetErrorMessage()
+    {
+        if (IsSuccess)
+        {
+            return null;
+        }
+
+        var requestPrefix = Request == null ? string.Empty : $"[{Request.Method} - {GetSafeActionName(Request.Action)}] | ";
+        var errorMessage = Exception?.Message ?? ErrorMessage;
+        var message = $"{requestPrefix}{ErrorType} - {errorMessage}.";
+        return message;
+    }
+
     /// <summary>
-    /// Indicates whether the operation completed successfully.
+    /// Sanitizes the action parameter for safe logging by only allowing known valid actions.
+    /// This prevents log injection attacks from user-controlled input.
     /// </summary>
-    public bool IsSuccess { get; set; }
-    /// <summary>
-    /// The data returned on success.
-    /// </summary>
-    public T? Data { get; set; }
-    /// <summary>
-    /// The error message returned on failure.
-    /// </summary>
-    public string? ErrorMessage { get; set; }
-    /// <summary>
-    /// The type of error for failure scenarios.
-    /// </summary>
-    public ServiceErrorType ErrorType { get; set; }
-
-    public static ServiceResult<T> Success(T data)
+    /// <param name="action">The action parameter from user input</param>
+    /// <returns>A sanitized action name safe for logging</returns>
+    private static string GetSafeActionName(string? action)
     {
-        return new ServiceResult<T>
-        {
-            IsSuccess = true,
-            Data = data,
-            ErrorType = ServiceErrorType.None
-        };
-    }
+        if (string.IsNullOrEmpty(action))
+            return "Unknown";
 
-    public static ServiceResult<T> Unauthorized(string message = "Unauthorized")
-    {
-        return new ServiceResult<T>
+        // Only allow known valid actions to prevent log injection
+        return action.ToLowerInvariant() switch
         {
-            IsSuccess = false,
-            ErrorMessage = message,
-            ErrorType = ServiceErrorType.Unauthorized
-        };
-    }
-
-    public static ServiceResult<T> NotFound(string message = "Not Found")
-    {
-        return new ServiceResult<T>
-        {
-            IsSuccess = false,
-            ErrorMessage = message,
-            ErrorType = ServiceErrorType.NotFound
-        };
-    }
-
-    public static ServiceResult<T> BadRequest(string message = "Bad Request")
-    {
-        return new ServiceResult<T>
-        {
-            IsSuccess = false,
-            ErrorMessage = message,
-            ErrorType = ServiceErrorType.BadRequest
-        };
-    }
-
-    public static ServiceResult<T> Forbidden(string message = "Forbidden")
-    {
-        return new ServiceResult<T>
-        {
-            IsSuccess = false,
-            ErrorMessage = message,
-            ErrorType = ServiceErrorType.Forbidden
-        };
-    }
-
-    public static ServiceResult<T> InternalServerError(string message = "Internal Server Error")
-    {
-        return new ServiceResult<T>
-        {
-            IsSuccess = false,
-            ErrorMessage = message,
-            ErrorType = ServiceErrorType.InternalServerError
-        };
-    }
-
-    public static ServiceResult<T> CreateFromResult<TOther>(ServiceResult<TOther> other)
-    {
-        return new ServiceResult<T>
-        {
-            IsSuccess = other.IsSuccess,
-            ErrorMessage = other.ErrorMessage,
-            ErrorType = other.ErrorType
+            BillbeeActions.GetOrders => "GetOrders",
+            BillbeeActions.GetOrder => "GetOrder", 
+            BillbeeActions.GetProduct => "GetProduct",
+            BillbeeActions.GetProducts => "GetProducts",
+            BillbeeActions.GetShippingProfiles => "GetShippingProfiles",
+            BillbeeActions.AckOrder => "AckOrder",
+            BillbeeActions.SetOrderState => "SetOrderState",
+            BillbeeActions.SetStock => "SetStock",
+            _ => "InvalidAction"
         };
     }
 }
