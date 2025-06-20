@@ -9,181 +9,121 @@ public class ServiceResult
     /// Indicates whether the operation completed successfully.
     /// </summary>
     public bool IsSuccess { get; set; }
+
     /// <summary>
     /// The data returned on success.
     /// </summary>
     public object? Data { get; set; }
+
     /// <summary>
     /// The error message returned on failure.
     /// </summary>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// The exception that occurred during processing, if any.
+    /// </summary>
+    public Exception? Exception { get; set; }
+
     /// <summary>
     /// The type of error for failure scenarios.
     /// </summary>
     public ServiceErrorType ErrorType { get; set; }
 
-    public static ServiceResult Success(object? data = null)
+    /// <summary>
+    /// The original Billbee request that was processed, if available.
+    /// </summary>
+    public BillbeeRequest? Request { get; set; }
+
+    public static ServiceResult Success(BillbeeRequest request, object? data = null)
     {
         return new ServiceResult
         {
             IsSuccess = true,
             Data = data,
-            ErrorType = ServiceErrorType.None
+            ErrorType = ServiceErrorType.None,
+            Request = request
         };
     }
 
-    public static ServiceResult Unauthorized(string message = "Unauthorized")
+    public static ServiceResult Unauthorized(BillbeeRequest request, string message = "Unauthorized")
     {
         return new ServiceResult
         {
             IsSuccess = false,
             ErrorMessage = message,
-            ErrorType = ServiceErrorType.Unauthorized
+            ErrorType = ServiceErrorType.Unauthorized,
+            Request = request
         };
     }
 
-    public static ServiceResult NotFound(string message = "Not Found")
+    public static ServiceResult NotFound(BillbeeRequest request, string message = "Not Found")
     {
         return new ServiceResult
         {
             IsSuccess = false,
             ErrorMessage = message,
-            ErrorType = ServiceErrorType.NotFound
+            ErrorType = ServiceErrorType.NotFound,
+            Request = request
         };
     }
 
-    public static ServiceResult BadRequest(string message = "Bad Request")
+    public static ServiceResult BadRequest(BillbeeRequest request, string message = "Bad Request")
     {
         return new ServiceResult
         {
             IsSuccess = false,
             ErrorMessage = message,
-            ErrorType = ServiceErrorType.BadRequest
+            ErrorType = ServiceErrorType.BadRequest,
+            Request = request
         };
     }
 
-    public static ServiceResult Forbidden(string message = "Forbidden")
+    public static ServiceResult Forbidden(BillbeeRequest request, string message = "Forbidden")
     {
         return new ServiceResult
         {
             IsSuccess = false,
             ErrorMessage = message,
-            ErrorType = ServiceErrorType.Forbidden
+            ErrorType = ServiceErrorType.Forbidden,
+            Request = request
         };
     }
 
-    public static ServiceResult InternalServerError(string message = "Internal Server Error")
+    public static ServiceResult InternalServerError(BillbeeRequest request, string message = "Internal Server Error")
     {
         return new ServiceResult
         {
             IsSuccess = false,
             ErrorMessage = message,
-            ErrorType = ServiceErrorType.InternalServerError
+            ErrorType = ServiceErrorType.InternalServerError,
+            Request = request
         };
     }
 
-    public static ServiceResult CreateFromResult<T>(ServiceResult<T> other)
+    public static ServiceResult InternalServerError(BillbeeRequest request, Exception exception)
     {
         return new ServiceResult
         {
-            IsSuccess = other.IsSuccess,
-            Data = other.Data,
-            ErrorMessage = other.ErrorMessage,
-            ErrorType = other.ErrorType
-        };
-    }
-}
-
-/// <summary>
-/// Represents the result of handling a Billbee API request with a typed data payload.
-/// </summary>
-public class ServiceResult<T>
-{
-    /// <summary>
-    /// Indicates whether the operation completed successfully.
-    /// </summary>
-    public bool IsSuccess { get; set; }
-    /// <summary>
-    /// The data returned on success.
-    /// </summary>
-    public T? Data { get; set; }
-    /// <summary>
-    /// The error message returned on failure.
-    /// </summary>
-    public string? ErrorMessage { get; set; }
-    /// <summary>
-    /// The type of error for failure scenarios.
-    /// </summary>
-    public ServiceErrorType ErrorType { get; set; }
-
-    public static ServiceResult<T> Success(T data)
-    {
-        return new ServiceResult<T>
-        {
-            IsSuccess = true,
-            Data = data,
-            ErrorType = ServiceErrorType.None
-        };
-    }
-
-    public static ServiceResult<T> Unauthorized(string message = "Unauthorized")
-    {
-        return new ServiceResult<T>
-        {
             IsSuccess = false,
-            ErrorMessage = message,
-            ErrorType = ServiceErrorType.Unauthorized
+            ErrorMessage = exception.Message,
+            Exception = exception,
+            ErrorType = ServiceErrorType.InternalServerError,
+            Request = request
         };
     }
 
-    public static ServiceResult<T> NotFound(string message = "Not Found")
+    public string? GetErrorMessage()
     {
-        return new ServiceResult<T>
+        if (IsSuccess)
         {
-            IsSuccess = false,
-            ErrorMessage = message,
-            ErrorType = ServiceErrorType.NotFound
-        };
-    }
+            return null;
+        }
 
-    public static ServiceResult<T> BadRequest(string message = "Bad Request")
-    {
-        return new ServiceResult<T>
-        {
-            IsSuccess = false,
-            ErrorMessage = message,
-            ErrorType = ServiceErrorType.BadRequest
-        };
-    }
-
-    public static ServiceResult<T> Forbidden(string message = "Forbidden")
-    {
-        return new ServiceResult<T>
-        {
-            IsSuccess = false,
-            ErrorMessage = message,
-            ErrorType = ServiceErrorType.Forbidden
-        };
-    }
-
-    public static ServiceResult<T> InternalServerError(string message = "Internal Server Error")
-    {
-        return new ServiceResult<T>
-        {
-            IsSuccess = false,
-            ErrorMessage = message,
-            ErrorType = ServiceErrorType.InternalServerError
-        };
-    }
-
-    public static ServiceResult<T> CreateFromResult<TOther>(ServiceResult<TOther> other)
-    {
-        return new ServiceResult<T>
-        {
-            IsSuccess = other.IsSuccess,
-            ErrorMessage = other.ErrorMessage,
-            ErrorType = other.ErrorType
-        };
+        var requestPrefix = Request == null ? string.Empty : $"[{Request.Method} - {Request.Action}] | ";
+        var errorMessage = Exception?.Message ?? ErrorMessage;
+        var message = $"{requestPrefix}{ErrorType} - {errorMessage}.";
+        return message;
     }
 }
 

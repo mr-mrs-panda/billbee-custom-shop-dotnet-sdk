@@ -20,15 +20,14 @@ public static class BillbeeControllerHelper
     /// <param name="action">The action parameter from the query string</param>
     /// <param name="key">The key parameter from the query string (optional)</param>
     /// <returns>An IActionResult with the appropriate HTTP response</returns>
-    public static async Task<IActionResult> HandleGetRequestAsync(
+    public static async Task<ServiceResult> HandleGetRequestAsync(
         IBillbeeCustomShopService service,
         HttpRequest httpRequest,
         string action,
         string? key = null)
     {
         var billbeeRequest = CreateBillbeeRequest(BillbeeMethods.Get, action, key, httpRequest);
-        var result = await service.HandleRequestAsync(billbeeRequest);
-        return ConvertToActionResult(result);
+        return await service.HandleRequestAsync(billbeeRequest);
     }
 
     /// <summary>
@@ -38,16 +37,15 @@ public static class BillbeeControllerHelper
     /// <param name="httpRequest">The HTTP request from the controller</param>
     /// <param name="action">The action parameter from the query string</param>
     /// <param name="key">The key parameter from the query string (optional)</param>
-    /// <returns>An IActionResult with the appropriate HTTP response</returns>
-    public static async Task<IActionResult> HandlePostRequestAsync(
+    /// <returns>An ServiceResult with the appropriate HTTP response</returns>
+    public static async Task<ServiceResult> HandlePostRequestAsync(
         IBillbeeCustomShopService service,
         HttpRequest httpRequest,
         string action,
         string? key = null)
     {
         var billbeeRequest = CreateBillbeeRequest(BillbeeMethods.Post, action, key, httpRequest);
-        var result = await service.HandleRequestAsync(billbeeRequest);
-        return ConvertToActionResult(result);
+        return await service.HandleRequestAsync(billbeeRequest);
     }
 
     /// <summary>

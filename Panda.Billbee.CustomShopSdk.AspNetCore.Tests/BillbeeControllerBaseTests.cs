@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Panda.Billbee.CustomShopSdk.AspNetCore.Controllers;
 using Panda.Billbee.CustomShopSdk.Interfaces;
@@ -33,7 +34,8 @@ public class BillbeeControllerBaseTests
         const string action = "GetOrders";
         const string key = "test-key";
         var expectedData = new { Orders = new[] { "Order1", "Order2" } };
-        var serviceResult = ServiceResult.Success(expectedData);
+        var billbeeRequest = new BillbeeRequest { Method = "GET", Action = action };
+        var serviceResult = ServiceResult.Success(billbeeRequest, expectedData);
         
         _mockService.Setup(s => s.HandleRequestAsync(It.IsAny<BillbeeRequest>()))
                    .ReturnsAsync(serviceResult);
@@ -52,7 +54,8 @@ public class BillbeeControllerBaseTests
     {
         // Arrange
         const string action = "GetOrders";
-        var serviceResult = ServiceResult.Unauthorized();
+        var billbeeRequest = new BillbeeRequest { Method = "GET", Action = action };
+        var serviceResult = ServiceResult.Unauthorized(billbeeRequest);
         
         _mockService.Setup(s => s.HandleRequestAsync(It.IsAny<BillbeeRequest>()))
                    .ReturnsAsync(serviceResult);
@@ -73,7 +76,8 @@ public class BillbeeControllerBaseTests
         const string action = "AckOrder";
         const string key = "test-key";
         const string expectedData = "OK";
-        var serviceResult = ServiceResult.Success(expectedData);
+        var billbeeRequest = new BillbeeRequest { Method = "POST", Action = action };
+        var serviceResult = ServiceResult.Success(billbeeRequest, expectedData);
         
         _mockService.Setup(s => s.HandleRequestAsync(It.IsAny<BillbeeRequest>()))
                    .ReturnsAsync(serviceResult);
@@ -92,7 +96,8 @@ public class BillbeeControllerBaseTests
     {
         // Arrange
         const string action = "AckOrder";
-        var serviceResult = ServiceResult.Unauthorized();
+        var billbeeRequest = new BillbeeRequest { Method = "POST", Action = action };
+        var serviceResult = ServiceResult.Unauthorized(billbeeRequest);
         
         _mockService.Setup(s => s.HandleRequestAsync(It.IsAny<BillbeeRequest>()))
                    .ReturnsAsync(serviceResult);
@@ -113,7 +118,8 @@ public class BillbeeControllerBaseTests
     public async Task HandleGetRequest_ShouldPassCorrectParameters_ToService(string action, string? key)
     {
         // Arrange
-        var serviceResult = ServiceResult.Success("test");
+        var billbeeRequest = new BillbeeRequest { Method = "GET", Action = action };
+        var serviceResult = ServiceResult.Success(billbeeRequest, "test");
         
         _mockService.Setup(s => s.HandleRequestAsync(It.IsAny<BillbeeRequest>()))
                    .ReturnsAsync(serviceResult);
@@ -133,7 +139,8 @@ public class BillbeeControllerBaseTests
     public async Task HandlePostRequest_ShouldPassCorrectParameters_ToService(string action, string? key)
     {
         // Arrange
-        var serviceResult = ServiceResult.Success("test");
+        var billbeeRequest = new BillbeeRequest { Method = "POST", Action = action };
+        var serviceResult = ServiceResult.Success(billbeeRequest, "test");
         
         _mockService.Setup(s => s.HandleRequestAsync(It.IsAny<BillbeeRequest>()))
                    .ReturnsAsync(serviceResult);
@@ -150,7 +157,7 @@ public class BillbeeControllerBaseTests
     {
         private readonly IBillbeeCustomShopService _service;
 
-        public TestBillbeeController(IBillbeeCustomShopService service)
+        public TestBillbeeController(IBillbeeCustomShopService service) : base(null)
         {
             _service = service;
         }

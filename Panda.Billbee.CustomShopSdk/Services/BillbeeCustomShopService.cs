@@ -14,24 +14,70 @@ namespace Panda.Billbee.CustomShopSdk.Services;
 public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
 {
     /// <summary>
-    /// Provides the <see cref="IOrderService"/> implementation for order-related operations.
+    /// Retrieves new and changed orders since the specified start date.
+    /// Corresponds to the HTTP GET Action=GetOrders endpoint.
     /// </summary>
-    protected abstract IOrderService? GetOrderService();
+    /// <param name="startDate">Start date (YYYY-MM-DD) from which new or changed orders should be returned.</param>
+    /// <param name="page">Page number of the data retrieval; default is 1.</param>
+    /// <param name="pageSize">Maximum number of records per page; default is 100.</param>
+    /// <returns>An <see cref="OrderResponse"/> containing paging info and orders.</returns>
+    protected abstract Task<OrderResponse> GetOrdersAsync(DateTime startDate, int page, int pageSize);
 
     /// <summary>
-    /// Provides the <see cref="IProductService"/> implementation for product-related operations.
+    /// Acknowledges receipt of an order to prevent its re-transmission.
+    /// Corresponds to the HTTP POST Action=AckOrder endpoint.
     /// </summary>
-    protected abstract IProductService? GetProductService();
+    /// <param name="orderId">Internal ID of the order to acknowledge.</param>
+    /// <returns>A task representing the acknowledgment operation.</returns>
+    protected abstract Task AckOrderAsync(string orderId);
 
     /// <summary>
-    /// Provides the <see cref="IStockService"/> implementation for stock update operations.
+    /// Retrieves a single order by its internal ID.
+    /// Corresponds to the HTTP GET Action=GetOrder endpoint.
     /// </summary>
-    protected abstract IStockService? GetStockService();
+    /// <param name="orderId">Internal ID of the order to retrieve.</param>
+    /// <returns>The <see cref="Order"/> or null if not found.</returns>
+    protected abstract Task<Order?> GetOrderAsync(string orderId);
 
     /// <summary>
-    /// Provides the <see cref="IShippingService"/> implementation for shipping profile operations.
+    /// Changes the status of an order in the shop system.
+    /// Corresponds to the HTTP POST Action=SetOrderState endpoint.
     /// </summary>
-    protected abstract IShippingService? GetShippingService();
+    /// <param name="request">Details of the status change including OrderId, NewStateId, Comment, ShippingCarrier, TrackingCode, and TrackingUrl.</param>
+    /// <returns>A task representing the status update operation.</returns>
+    protected abstract Task SetOrderStateAsync(SetOrderStateRequest request);
+
+    /// <summary>
+    /// Retrieves a single product by its internal ID.
+    /// Corresponds to the HTTP GET Action=GetProduct endpoint.
+    /// </summary>
+    /// <param name="productId">Internal ID of the product to retrieve.</param>
+    /// <returns>The <see cref="Product"/> or null if not found.</returns>
+    protected abstract Task<Product?> GetProductAsync(string productId);
+
+    /// <summary>
+    /// Retrieves a paged list of products.
+    /// Corresponds to the HTTP GET Action=GetProducts endpoint.
+    /// </summary>
+    /// <param name="page">Page number of the data retrieval; default is 1.</param>
+    /// <param name="pageSize">Maximum number of records per page; default is 100.</param>
+    /// <returns>A <see cref="ProductResponse"/> containing paging info and products.</returns>
+    protected abstract Task<ProductResponse> GetProductsAsync(int page, int pageSize);
+
+    /// <summary>
+    /// Updates the available stock for a product.
+    /// Corresponds to the HTTP POST Action=SetStock endpoint.
+    /// </summary>
+    /// <param name="request">Details of the stock update including ProductId and AvailableStock.</param>
+    /// <returns>A task representing the stock update operation.</returns>
+    protected abstract Task SetStockAsync(SetStockRequest request);
+
+    /// <summary>
+    /// Retrieves all shipping profiles from the shop system.
+    /// Corresponds to the HTTP GET Action=GetShippingProfiles endpoint.
+    /// </summary>
+    /// <returns>A list of <see cref="ShippingProfile"/>.</returns>
+    protected abstract Task<List<ShippingProfile>> GetShippingProfilesAsync();
 
     /// <summary>
     /// Retrieves the configured API key for validating incoming requests; return null or empty to disable authentication.
@@ -55,10 +101,10 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
         try
         {
             if (string.IsNullOrEmpty(request.Action))
-                return ServiceResult.BadRequest("Action parameter is required");
+                return ServiceResult.BadRequest(request, "Action parameter is required");
 
             if (!ValidateApiKey(request.Key) || !ValidateBasicAuth(request.AuthorizationHeader))
-                return ServiceResult.Unauthorized();
+                return ServiceResult.Unauthorized(request);
 
             return request.Action.ToLower() switch
             {
@@ -71,19 +117,20 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
                 BillbeeActions.GetProducts when request.Method.Equals(BillbeeMethods.Get,
                     StringComparison.CurrentCultureIgnoreCase) => await HandleGetProductsAsync(request),
                 BillbeeActions.GetShippingProfiles when request.Method.Equals(BillbeeMethods.Get,
-                    StringComparison.CurrentCultureIgnoreCase) => await HandleGetShippingProfilesAsync(),
+                    StringComparison.CurrentCultureIgnoreCase) => await HandleGetShippingProfilesAsync(request),
                 BillbeeActions.AckOrder when request.Method.Equals(BillbeeMethods.Post,
                     StringComparison.CurrentCultureIgnoreCase) => await HandleAckOrderAsync(request),
                 BillbeeActions.SetOrderState when request.Method.Equals(BillbeeMethods.Post,
                     StringComparison.CurrentCultureIgnoreCase) => await HandleSetOrderStateAsync(request),
                 BillbeeActions.SetStock when request.Method.Equals(BillbeeMethods.Post,
                     StringComparison.CurrentCultureIgnoreCase) => await HandleSetStockAsync(request),
-                _ => ServiceResult.BadRequest($"Invalid action '{request.Action}' for method '{request.Method}'")
+                _ => ServiceResult.BadRequest(request,
+                    $"Invalid action '{request.Action}' for method '{request.Method}'")
             };
         }
         catch (Exception ex)
         {
-            return ServiceResult.InternalServerError(ex.Message);
+            return ServiceResult.InternalServerError(request, ex);
         }
     }
 
@@ -101,34 +148,53 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
         if (page <= 0) page = 1;
         if (pageSize <= 0) pageSize = 100;
 
-        var result = await GetOrdersAsync(startDate, page, pageSize);
-        return result.IsSuccess
-            ? ServiceResult.Success(result.Data!)
-            : ServiceResult.CreateFromResult(result);
+        try
+        {
+            var result = await GetOrdersAsync(startDate, page, pageSize);
+            return ServiceResult.Success(request, result);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.InternalServerError(request, ex);
+        }
     }
 
     private async Task<ServiceResult> HandleGetOrderAsync(BillbeeRequest request)
     {
         var orderId = request.GetQueryParameter(BillbeeQueryParameters.OrderId);
         if (string.IsNullOrEmpty(orderId))
-            return ServiceResult.BadRequest($"{BillbeeQueryParameters.OrderId} is required");
+            return ServiceResult.BadRequest(request, $"{BillbeeQueryParameters.OrderId} is required");
 
-        var result = await GetOrderAsync(orderId);
-        return result.IsSuccess
-            ? ServiceResult.Success(result.Data!)
-            : ServiceResult.CreateFromResult(result);
+        try
+        {
+            var result = await GetOrderAsync(orderId);
+            return result == null
+                ? ServiceResult.NotFound(request, $"Order with ID {orderId} not found")
+                : ServiceResult.Success(request, result);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.InternalServerError(request, ex);
+        }
     }
 
     private async Task<ServiceResult> HandleGetProductAsync(BillbeeRequest request)
     {
         var productId = request.GetQueryParameter(BillbeeQueryParameters.ProductId);
         if (string.IsNullOrEmpty(productId))
-            return ServiceResult.BadRequest($"{BillbeeQueryParameters.ProductId} is required");
+            return ServiceResult.BadRequest(request, $"{BillbeeQueryParameters.ProductId} is required");
 
-        var result = await GetProductAsync(productId);
-        return result.IsSuccess
-            ? ServiceResult.Success(result.Data!)
-            : ServiceResult.CreateFromResult(result);
+        try
+        {
+            var result = await GetProductAsync(productId);
+            return result == null
+                ? ServiceResult.NotFound(request, $"Product with ID {productId} not found")
+                : ServiceResult.Success(request, result);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.InternalServerError(request, ex);
+        }
     }
 
     private async Task<ServiceResult> HandleGetProductsAsync(BillbeeRequest request)
@@ -139,30 +205,45 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
         if (page <= 0) page = 1;
         if (pageSize <= 0) pageSize = 100;
 
-        var result = await GetProductsAsync(page, pageSize);
-        return result.IsSuccess
-            ? ServiceResult.Success(result.Data!)
-            : ServiceResult.CreateFromResult(result);
+        try
+        {
+            var result = await GetProductsAsync(page, pageSize);
+            return ServiceResult.Success(request, result);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.InternalServerError(request, ex);
+        }
     }
 
-    private async Task<ServiceResult> HandleGetShippingProfilesAsync()
+    private async Task<ServiceResult> HandleGetShippingProfilesAsync(BillbeeRequest request)
     {
-        var result = await GetShippingProfilesAsync();
-        return result.IsSuccess
-            ? ServiceResult.Success(result.Data!)
-            : ServiceResult.CreateFromResult(result);
+        try
+        {
+            var result = await GetShippingProfilesAsync();
+            return ServiceResult.Success(request, result);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.InternalServerError(request, ex);
+        }
     }
 
     private async Task<ServiceResult> HandleAckOrderAsync(BillbeeRequest request)
     {
         var orderId = request.GetFormParameter(BillbeeQueryParameters.OrderId);
         if (string.IsNullOrEmpty(orderId))
-            return ServiceResult.BadRequest($"{BillbeeQueryParameters.OrderId} is required");
+            return ServiceResult.BadRequest(request, $"{BillbeeQueryParameters.OrderId} is required");
 
-        var result = await AckOrderAsync(orderId);
-        return result.IsSuccess
-            ? ServiceResult.Success(result.Data!)
-            : ServiceResult.CreateFromResult(result);
+        try
+        {
+            await AckOrderAsync(orderId);
+            return ServiceResult.Success(request, "OK");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.InternalServerError(request, ex);
+        }
     }
 
     private async Task<ServiceResult> HandleSetOrderStateAsync(BillbeeRequest request)
@@ -172,8 +253,9 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
             OrderId = request.GetFormParameter(BillbeeQueryParameters.OrderId),
             NewStateId = request.GetFormParameter(BillbeeQueryParameters.NewStateId),
             NewStateName = request.GetFormParameter(BillbeeQueryParameters.NewStateName),
-            NewStateTypeId = 
-                Enum.TryParse<OrderStatus>(request.GetFormParameter(BillbeeQueryParameters.NewStateTypeId), out var status)
+            NewStateTypeId =
+                Enum.TryParse<OrderStatus>(request.GetFormParameter(BillbeeQueryParameters.NewStateTypeId),
+                    out var status)
                     ? status
                     : null,
             Comment = request.GetFormParameter(BillbeeQueryParameters.Comment),
@@ -182,10 +264,15 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
             TrackingUrl = request.GetFormParameter(BillbeeQueryParameters.TrackingUrl)
         };
 
-        var result = await SetOrderStateAsync(setOrderStateRequest);
-        return result.IsSuccess
-            ? ServiceResult.Success(result.Data!)
-            : ServiceResult.CreateFromResult(result);
+        try
+        {
+            await SetOrderStateAsync(setOrderStateRequest);
+            return ServiceResult.Success(request, "OK");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.InternalServerError(request, ex);
+        }
     }
 
     private async Task<ServiceResult> HandleSetStockAsync(BillbeeRequest request)
@@ -199,10 +286,15 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
                     : null
         };
 
-        var result = await SetStockAsync(setStockRequest);
-        return result.IsSuccess
-            ? ServiceResult.Success(result.Data!)
-            : ServiceResult.CreateFromResult(result);
+        try
+        {
+            await SetStockAsync(setStockRequest);
+            return ServiceResult.Success(request, "OK");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.InternalServerError(request, ex);
+        }
     }
 
     private bool ValidateApiKey(string? receivedKey)
@@ -223,160 +315,4 @@ public abstract class BillbeeCustomShopService : IBillbeeCustomShopService
         return ApiKeyAuthenticator.ValidateBasicAuth(username, password, authHeader);
     }
 
-    private async Task<ServiceResult<OrderResponse>> GetOrdersAsync(DateTime startDate, int page = 1,
-        int pageSize = 100)
-    {
-        try
-        {
-            var orderService = GetOrderService();
-            if (orderService == null)
-                return ServiceResult<OrderResponse>.NotFound("Order service not implemented");
-
-            var result = await orderService.GetOrdersAsync(startDate, page, pageSize);
-            return ServiceResult<OrderResponse>.Success(result);
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<OrderResponse>.InternalServerError(ex.Message);
-        }
-    }
-
-    private async Task<ServiceResult<Order>> GetOrderAsync(string orderId)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(orderId))
-                return ServiceResult<Order>.BadRequest("OrderId is required");
-
-            var orderService = GetOrderService();
-            if (orderService == null)
-                return ServiceResult<Order>.NotFound("Order service not implemented");
-
-            var result = await orderService.GetOrderAsync(orderId);
-            return result == null
-                ? ServiceResult<Order>.NotFound($"Order with ID {orderId} not found")
-                : ServiceResult<Order>.Success(result);
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<Order>.InternalServerError(ex.Message);
-        }
-    }
-
-    private async Task<ServiceResult<string>> AckOrderAsync(string orderId)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(orderId))
-                return ServiceResult<string>.BadRequest("OrderId is required");
-
-            var orderService = GetOrderService();
-            if (orderService == null)
-                return ServiceResult<string>.NotFound("Order service not implemented");
-
-            await orderService.AckOrderAsync(orderId);
-            return ServiceResult<string>.Success("OK");
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<string>.InternalServerError(ex.Message);
-        }
-    }
-
-    private async Task<ServiceResult<string>> SetOrderStateAsync(SetOrderStateRequest request)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(request.OrderId))
-                return ServiceResult<string>.BadRequest("Valid SetOrderStateRequest with OrderId is required");
-
-            var orderService = GetOrderService();
-            if (orderService == null)
-                return ServiceResult<string>.NotFound("Order service not implemented");
-
-            await orderService.SetOrderStateAsync(request);
-            return ServiceResult<string>.Success("OK");
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<string>.InternalServerError(ex.Message);
-        }
-    }
-
-    private async Task<ServiceResult<Product>> GetProductAsync(string productId)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(productId))
-                return ServiceResult<Product>.BadRequest("ProductId is required");
-
-            var productService = GetProductService();
-            if (productService == null)
-                return ServiceResult<Product>.NotFound("Product service not implemented");
-
-            var result = await productService.GetProductAsync(productId);
-            if (result == null)
-                return ServiceResult<Product>.NotFound($"Product with ID {productId} not found");
-
-            return ServiceResult<Product>.Success(result);
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<Product>.InternalServerError(ex.Message);
-        }
-    }
-
-    private async Task<ServiceResult<ProductResponse>> GetProductsAsync(int page = 1, int pageSize = 100)
-    {
-        try
-        {
-            var productService = GetProductService();
-            if (productService == null)
-                return ServiceResult<ProductResponse>.NotFound("Product service not implemented");
-
-            var result = await productService.GetProductsAsync(page, pageSize);
-            return ServiceResult<ProductResponse>.Success(result);
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<ProductResponse>.InternalServerError(ex.Message);
-        }
-    }
-
-    private async Task<ServiceResult<string>> SetStockAsync(SetStockRequest request)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(request.ProductId))
-                return ServiceResult<string>.BadRequest("Valid SetStockRequest with ProductId is required");
-
-            var stockService = GetStockService();
-            if (stockService == null)
-                return ServiceResult<string>.NotFound("Stock service not implemented");
-
-            await stockService.SetStockAsync(request);
-            return ServiceResult<string>.Success("OK");
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<string>.InternalServerError(ex.Message);
-        }
-    }
-
-    private async Task<ServiceResult<List<ShippingProfile>>> GetShippingProfilesAsync()
-    {
-        try
-        {
-            var shippingService = GetShippingService();
-            if (shippingService == null)
-                return ServiceResult<List<ShippingProfile>>.NotFound("Shipping service not implemented");
-
-            var result = await shippingService.GetShippingProfilesAsync();
-            return ServiceResult<List<ShippingProfile>>.Success(result);
-        }
-        catch (Exception ex)
-        {
-            return ServiceResult<List<ShippingProfile>>.InternalServerError(ex.Message);
-        }
-    }
 }
