@@ -37,7 +37,7 @@ public static class BillbeeControllerHelper
     /// <param name="httpRequest">The HTTP request from the controller</param>
     /// <param name="action">The action parameter from the query string</param>
     /// <param name="key">The key parameter from the query string (optional)</param>
-    /// <returns>An ServiceResult with the appropriate HTTP response</returns>
+    /// <returns>A ServiceResult with the appropriate HTTP response</returns>
     public static async Task<ServiceResult> HandlePostRequestAsync(
         IBillbeeCustomShopService service,
         HttpRequest httpRequest,
