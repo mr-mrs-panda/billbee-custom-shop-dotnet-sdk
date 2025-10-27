@@ -47,7 +47,7 @@ jobs:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         
     - name: Upload package artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: nuget-packages
         path: ./artifacts/*.nupkg
