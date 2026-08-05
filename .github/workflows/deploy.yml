@@ -10,44 +10,28 @@ jobs:
     name: Deploy to NuGet
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-      
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
+    - uses: actions/checkout@v6
+
+    - uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: |
-          8.0.x
-          9.0.x
-        
-    - name: Restore dependencies
-      run: dotnet restore
-      
+        dotnet-version: 10.0.x
+
     - name: Build
-      run: dotnet build --no-restore --configuration Release
-      
+      run: dotnet build --configuration Release
+
     - name: Test
-      run: dotnet test --no-build --configuration Release --verbosity normal
-      
+      run: dotnet test --no-build --configuration Release
+
     - name: Extract version from tag
       id: version
       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-      
-    - name: Pack Core SDK
-      run: dotnet pack ./Panda.Billbee.CustomShopSdk/Panda.Billbee.CustomShopSdk.csproj --no-build --configuration Release --output ./artifacts -p:PackageVersion=${{ steps.version.outputs.VERSION }}
-      
-    - name: Pack ASP.NET Core Helpers
-      run: dotnet pack ./Panda.Billbee.CustomShopSdk.AspNetCore/Panda.Billbee.CustomShopSdk.AspNetCore.csproj --no-build --configuration Release --output ./artifacts -p:PackageVersion=${{ steps.version.outputs.VERSION }}
-      
+
+    - name: Pack
+      run: |
+        dotnet pack ./Panda.Billbee.CustomShopSdk/Panda.Billbee.CustomShopSdk.csproj --no-build --configuration Release --output ./artifacts -p:PackageVersion=${{ steps.version.outputs.VERSION }}
+        dotnet pack ./Panda.Billbee.CustomShopSdk.AspNetCore/Panda.Billbee.CustomShopSdk.AspNetCore.csproj --no-build --configuration Release --output ./artifacts -p:PackageVersion=${{ steps.version.outputs.VERSION }}
+
     - name: Publish to NuGet
       run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-      env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        
-    - name: Upload package artifacts
-      uses: actions/upload-artifact@v7
-      with:
-        name: nuget-packages
-        path: ./artifacts/*.nupkg
